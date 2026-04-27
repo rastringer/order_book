@@ -1,0 +1,91 @@
+Phase 1: The "Toy" Version (Functional Correctness)
+Goal: Prove the matching logic works. Speed doesn't matter yet. Focus: Data structures, basic matching algorithm, correctness.
+
+What to Build:
+Data Structures:
+Order: ID, Price, Quantity, Side (Buy/Sell), Timestamp.
+OrderBook: Two maps: std::map<Price, std::list<Order>> for Bids and Asks.
+Note: Using std::map and std::list is fine here. They are slow, but correct.
+Core Logic:
+AddOrder(order): Insert into the map.
+CancelOrder(id): Find and remove.
+Match(): While top bid >= top ask, execute trade.
+Input: Read a simple text file (CSV) of orders.
+Output: Print trades to console.
+Key Learning:
+How to structure the matching loop.
+Handling partial fills (e.g., order for 100 shares, match 60, leave 40).
+Deliverable: A program that correctly matches a static CSV file of 1,000 orders.
+Code Snippet (Phase 1 Logic):
+
+
+// Simple, readable, but slow (O(N) or O(log N) per op)
+struct Order {
+    uint64_t id;
+    double price;
+    int quantity;
+    bool is_buy;
+};
+
+class OrderBook {
+    std::map<double, std::list<Order>> bids; // Sorted descending
+    std::map<double, std::list<Order>> asks; // Sorted ascending
+
+public:
+    void addOrder(Order o) {
+        if (o.is_buy) bids[o.price].push_back(o);
+        else asks[o.price].push_back(o);
+        match();
+    }
+
+    void match() {
+        while (!bids.empty() && !asks.empty() && bids.begin()->first >= asks.begin()->first) {
+            // Execute trade logic here...
+            // (Pop from lists, update quantities, print trade)
+        }
+    }
+};
+Phase 2: The "Fast" Version (Data Structure Optimization)
+Goal: Remove the overhead of std::map and std::list. Focus: Cache locality, contiguous memory, custom allocators.
+
+What to Change:
+Replace std::map with a Hash Map or Sorted Vector:
+std::map is a red-black tree (pointer chasing = cache misses).
+Better: Use a std::unordered_map for price levels, or a std::vector with binary search if price levels are dense.
+Replace std::list with a Ring Buffer or Array:
+std::list allocates every node on the heap.
+Better: Pre-allocate a large array of Order structs (e.g., 1 million slots). Use indices instead of pointers.
+Fixed-Point Math:
+Replace double for price with int64_t (e.g., price * 10,000). Floating point is slow and non-deterministic for equality checks.
+Key Learning:
+Why pointer chasing kills performance.
+How to implement a simple custom allocator (Object Pool).
+Deliverable: Same CSV file, but 10x faster. Add a simple timer to prove it.
+Phase 3: The "Real-Time" Version (Concurrency & Lock-Free)
+Goal: Handle incoming data streams without blocking. Focus: Multi-threading, lock-free queues, atomic operations.
+
+What to Add:
+Separate Threads:
+Thread 1 (Ingest): Reads network data (or simulates it) and pushes orders into a queue.
+Thread 2 (Matching): Pulls from the queue and runs the matching engine.
+Lock-Free Queue:
+Replace std::queue + std::mutex with a SPSC (Single Producer, Single Consumer) Ring Buffer.
+Use std::atomic for head/tail pointers. No mutexes!
+Latency Measurement:
+Add a timestamp to every order when it enters the queue.
+Calculate current_time - entry_time when matched.
+Key Learning:
+Memory ordering (std::memory_order_acquire/release).
+False sharing (padding structures to 64-byte cache lines).
+Deliverable: A program that accepts simulated network packets and reports P50/P99 latency.
+Phase 4: The "Production" Version (Protocol & Robustness)
+Goal: Make it look like a real exchange engine. Focus: Binary protocols, error handling, persistence.
+
+What to Add:
+Binary Protocol Parser:
+Instead of CSV, parse a binary format (e.g., 4 bytes for price, 4 for qty).
+This simulates reading from a network socket (UDP/TCP).
+Persistence:
+Save the state of the book to disk every N seconds (for crash recovery simulation).
+Benchmarking Suite:
+A script that floods the engine with 1M orders and generates a report.
