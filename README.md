@@ -87,8 +87,6 @@ The engine follows a classic event-driven design:
 
 ## Data flow
 
-```text
-If you want to show the internal flow more clearly:
 
 ```text
 Order Input
