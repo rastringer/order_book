@@ -2,6 +2,8 @@
 
 A low-latency order book and matching engine built as a learning project in optimizing modern C++23 applications.
 
+![Demo gif](https://github.com/rastringer/order_book/blob/main/docs/order_book_demo.gif)
+
 ## What's an Order Book?
 
 An order book is like a digital waiting room for buyers and sellers. It's the core of stock or crypto exchanges and trading platforms. 
