@@ -4,21 +4,13 @@
 
 namespace order_book {
 
-bool OrderBook::add_order(Order& order) {
-    
-    // Generate unique ID if not set
-    static OrderId next_id = 1;
-    if (order.id == 0) {
-        order.id = next_id++;
-    }
-
+std::optional<OrderId> OrderBook::add_order(Order order) {    
     // Validate order
     if (order.quantity <= 0 || order.price <= 0) {
-        return false;
+        return std::nullopt;
     }
 
-    // Store in lookup table for fast cancellation
-    order_lookup_[order.id] = {order.price, order.side};
+    order.id = next_id_++;
 
     // Add to appropriate book
     if (order.side == Side::Buy) {
@@ -27,7 +19,10 @@ bool OrderBook::add_order(Order& order) {
         asks_map_[order.price].push_back(order);
     }
 
-    return true;
+    // Store in lookup table for fast cancellation
+    order_lookup_[order.id] = {order.price, order.side};
+
+    return order.id;
 }
 
 bool OrderBook::cancel_order(OrderId id) {
@@ -72,6 +67,28 @@ std::optional<Price> OrderBook::get_best_bid() const {
 std::optional<Price> OrderBook::get_best_ask() const {
     if (asks_map_.empty()) return std::nullopt;
     return asks_map_.begin()->first;
+}
+
+std::vector<std::pair<Price, Quantity>> OrderBook::get_bid_depth() const {
+    std::vector<std::pair<Price, Quantity>> result;
+    result.reserve(bids_map_.size());
+    for (const auto& [price, level] : bids_map_) {
+        Quantity total = 0;
+        for (const auto& o : level) total += o.remaining();
+        if (total > 0) result.emplace_back(price, total);
+    }
+    return result;
+}
+
+std::vector<std::pair<Price, Quantity>> OrderBook::get_ask_depth() const {
+    std::vector<std::pair<Price, Quantity>> result;
+    result.reserve(asks_map_.size());
+    for (const auto& [price, level] : asks_map_) {
+        Quantity total = 0;
+        for (const auto& o : level) total += o.remaining();
+        if (total > 0) result.emplace_back(price, total);
+    }
+    return result;
 }
 
 std::vector<std::pair<Price, Quantity>> OrderBook::get_depth(int levels) const {

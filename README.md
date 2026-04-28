@@ -1,6 +1,6 @@
 # HFT-Style Order Book Engine
 
-A low-latency order book and matching engine built as a learning project in optimizing modern C++20 applications.
+A low-latency order book and matching engine built as a learning project in optimizing modern C++23 applications.
 
 ## What's an Order Book?
 

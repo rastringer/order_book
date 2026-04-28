@@ -18,9 +18,18 @@ public:
     // trigger trade callback
     void process_order(Order& order);
 
+    // Cancel a resting order by ID. Returns true if the 
+    // order was found
+    bool cancel_order(OrderId id) { return book_.cancel_order(id);}
+
     // Expose book accessors for main.cpp
     std::optional<Price> get_best_bid() const { return book_.get_best_bid(); }
     std::optional<Price> get_best_ask() const { return book_.get_best_ask(); }
+
+    // Aggregated depth per side, for snapshot / visualization use
+    std::vector<std::pair<Price, Quantity>> get_bid_depth() const { return book_.get_bid_depth(); }
+    std::vector<std::pair<Price, Quantity>> get_ask_depth() const { return book_.get_ask_depth(); }
+
 
 
 private: 

@@ -19,12 +19,20 @@ void MatchingEngine::process_order(Order& order) {
     // Limit orders first try to match, rest if unfulfilled
     if (order.side == Side::Buy) {
         match_buy(order);
-        if (!order.is_filled()) book_.add_order(order);
     } else {
         match_sell(order);
-        if (!order.is_filled()) {
-            book_.add_order(order);
+    }
+
+    if (!order.is_filled()) {
+        auto id = book_.add_order(order);
+
+        if (!id) {
+            // Order was invalid and not added to the book 
+            return;
         }
+
+        // Keep the generated id on the original order object.
+        order.id = *id;
     }
 }
 
