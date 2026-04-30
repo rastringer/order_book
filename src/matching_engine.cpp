@@ -109,6 +109,8 @@ void MatchingEngine::execute_trade(Order& aggressor, Order& resting, Price price
     resting.filled_quantity += qty;
 
     Trade trade{
+        // Designated initializers from C++20 make class initialization 
+        // more readable and less error-prone 
         .aggressor_id = aggressor.id,
         .resting_id = resting.id,
         .price = price,

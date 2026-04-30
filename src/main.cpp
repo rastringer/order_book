@@ -14,7 +14,7 @@ namespace {
 
 // ---------------------------------------------------------------------------
 // Snapshot: state of the book + trades produced *during* the current event.
-// We capture one snapshot per call to step()/cancel_step(), plus an initial
+// One snapshot captured per call to step()/cancel_step(), plus an initial
 // empty-book snapshot. The full series is written out as JSON for the GIF
 // generator (scripts/generate_book_gif.py).
 // ---------------------------------------------------------------------------

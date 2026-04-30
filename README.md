@@ -27,12 +27,24 @@ Optimization is key for trading platforms (and in particular high-frequency trad
 - Order cancellation
 - Best bid/ask queries
 
+The FIFO price-time priority is `O(log n)` via `std::map<Price, std::deque<Order>>`. Exploration for V2 will focus on improvements from using `std::array` or `std::vector`. Bids are ordered by `std::greater`, `O(1)` order cancellation is via an `unordered_map` ID lookup. 
+
+Fixed-width integer prices and quantities throughout eliminate floating-point error on the hot path adn separate the order book container from the matching policy to keep the matching loop unit-testable.
+
 ## Building
 ```bash
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(nproc)
 ./order_book_demo
+./order_book_tests
+```
+
+## Benchmarking
+
+To run the benchmarks found in `bench/`, run:
+```
+./build/order_book_bench
 ```
 
 ## Roadmap
@@ -109,4 +121,44 @@ Order Input
 │  Rest in     │      │  Emit Trade  │
 │  Book        │      │  Event       │
 └──────────────┘      └──────────────┘
+```
+
+## Project Layout
+
+- `include/` — public headers (`types.h`, `utils.h`)
+- `src/` — implementation (`main.cpp`, `order_book.{h,cpp}`, `matching_engine.{h,cpp}`)
+- `test/` — unit tests (placeholder)
+- `CMakeLists.txt` — top-level build config
+- `build.sh` — convenience script that configures, builds, and runs the demo
+- `build/` — out-of-source build directory (gitignored)
+- `bench/` - benchmark tests
+
+## Benchmark
+- Source: `bench/bench.cpp`, target: `order_book_bench` (built by default; disable with `-DBUILD_BENCH=OFF`).
+- Generates a deterministic synthetic workload (default 1M hot orders, 5K seeded liquidity, mix of 5% market / 20% crossing limit / 75% passive limit), times the matching loop with `std::chrono::steady_clock`, and reports throughput plus p50/p90/p95/p99/p99.9/p99.99 per-order latency.
+- Usage: `./build/order_book_bench [hot_orders] [seed_orders] [rng_seed] [--no-per-op]`.
+- Per-op clock sampling adds ~20-30ns/call; use `--no-per-op` for an unbiased throughput number.
+
+## Performance
+
+Current `perf` stats (running the engine on a laptop) indicate the engine procees 1 million orders in 0.266 seconds. CPU utlization is at 98%. We will work on improving the branch mispredictions and the Instructions Per Cycle (IPC).
+
+```
+Performance counter stats for './build/order_book_bench':
+
+260,914,232      task-clock         #    0.980 CPUs utilized             
+6      context-switches             #   22.996 /sec                      
+3      cpu-migrations               #   11.498 /sec                      
+32,728      page-faults             #  125.436 K/sec                     
+1,528,288,428      instructions     #    1.20  insn per cycle            
+                                    #    0.30  stalled cycles per insn   
+1,273,020,939      cycles           #    4.879 GHz                       
+461,223,839      stalled-cycles-frontend    #   36.23% frontend cycles idle      
+285,345,873      branches           #    1.094 G/sec                     
+11,474,158      branch-misses       #    4.02% of all branches           
+
+0.266134713 seconds time elapsed
+
+0.206038000 seconds user
+0.060011000 seconds sys
 ```

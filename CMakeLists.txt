@@ -53,3 +53,21 @@ if(BUILD_TESTING)
     endif()
     add_test(NAME unit_tests COMMAND order_book_tests)
 endif()
+
+# ---------------------------------------------------------------------
+# Benchmark harness. Disable with -DBUILD_BENCH=OFF.
+# Always built in Release mode; will work in Debug but numbers are
+# meaningless without optimization.
+# ---------------------------------------------------------------------
+option(BUILD_BENCH "Build the benchmark harness" ON)
+
+if(BUILD_BENCH)
+    add_executable(order_book_bench
+        bench/bench.cpp
+        ${ENGINE_SOURCES}
+    )
+    target_include_directories(order_book_bench PRIVATE ${CMAKE_SOURCE_DIR}/src)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(order_book_bench PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+endif()
